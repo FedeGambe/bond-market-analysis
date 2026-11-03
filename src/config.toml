@@ -1,0 +1,23 @@
+# Serie scaricate da main.py: nome della colonna = codice della serie.
+inizio = "2005-01-01"
+
+[fred]  # https://fred.stlouisfed.org - rendimenti Treasury giornalieri e spread corporate (ICE BofA, solo ultimi 3 anni)
+"US 3M" = "DGS3MO"
+"US 2Y" = "DGS2"
+"US 5Y" = "DGS5"
+"US 10Y" = "DGS10"
+"US 30Y" = "DGS30"
+"US IG spread" = "BAMLC0A0CM"
+"US HY spread" = "BAMLH0A0HYM2"
+"EUR HY spread" = "BAMLHE00EHYIOAS"
+
+[bce]  # https://data.ecb.europa.eu - curva AAA dell'area euro (giornaliera) e decennali per paese (media mensile)
+"EUR 3M" = "YC/B.U2.EUR.4F.G_N_A.SV_C_YM.SR_3M"
+"EUR 2Y" = "YC/B.U2.EUR.4F.G_N_A.SV_C_YM.SR_2Y"
+"EUR 5Y" = "YC/B.U2.EUR.4F.G_N_A.SV_C_YM.SR_5Y"
+"EUR 10Y" = "YC/B.U2.EUR.4F.G_N_A.SV_C_YM.SR_10Y"
+"EUR 30Y" = "YC/B.U2.EUR.4F.G_N_A.SV_C_YM.SR_30Y"
+"DE 10Y" = "IRS/M.DE.L.L40.CI.0000.EUR.N.Z"
+"IT 10Y" = "IRS/M.IT.L.L40.CI.0000.EUR.N.Z"
+"FR 10Y" = "IRS/M.FR.L.L40.CI.0000.EUR.N.Z"
+"ES 10Y" = "IRS/M.ES.L.L40.CI.0000.EUR.N.Z"
