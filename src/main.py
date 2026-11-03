@@ -1,12 +1,14 @@
-"""Scarica i rendimenti dei titoli di Stato e gli spread corporate, europei e americani, dalle API pubbliche di BCE e FRED.
-Riscrive lo storico data/rendimenti.csv (una colonna per serie) e il riepilogo data/riepilogo.xlsx.
+"""Scarica i rendimenti dei titoli di Stato e gli spread corporate, europei e americani (BCE, FRED, grafici CNBC).
+Aggiorna lo storico data/rendimenti.csv (una colonna per serie) e il riepilogo data/riepilogo.xlsx.
 
     python src/main.py             scarica e aggiorna csv e foglio
     python src/main.py --foglio    solo ricostruisce il foglio dal csv"""
+import json
 import sys
 import tomllib
 from datetime import datetime
 from pathlib import Path
+from urllib.request import Request, urlopen
 
 import pandas as pd
 
@@ -15,17 +17,36 @@ CSV = ROOT / "data" / "rendimenti.csv"
 XLSX = ROOT / "data" / "riepilogo.xlsx"
 CONFIG = tomllib.loads((Path(__file__).parent / "config.toml").read_text(encoding="utf-8"))
 URL = {"fred": "https://fred.stlouisfed.org/graph/fredgraph.csv?id={}&cosd={}",
-       "bce": "https://data-api.ecb.europa.eu/service/data/{}?format=csvdata&startPeriod={}"}
+       "bce": "https://data-api.ecb.europa.eu/service/data/{}?format=csvdata&startPeriod={}",
+       "cnbc": "https://ts-api.cnbc.com/harmony/app/charts/{}.json?symbol={}"}  # 1Y = giornaliero (2 anni), 5Y = settimanale
 # differenze tra serie, in punti percentuali
 DERIVATE = {"US 10Y-2Y": ("US 10Y", "US 2Y"), "EUR 10Y-2Y": ("EUR 10Y", "EUR 2Y"), "US-EUR 10Y": ("US 10Y", "EUR 10Y"),
             "IT-DE 10Y": ("IT 10Y", "DE 10Y"), "FR-DE 10Y": ("FR 10Y", "DE 10Y"), "ES-DE 10Y": ("ES 10Y", "DE 10Y")}
 
 
+def barre(periodo, simbolo):
+    """Chiusure dai grafici CNBC, indicizzate per data."""
+    req = Request(URL["cnbc"].format(periodo, simbolo), headers={"User-Agent": "Mozilla/5.0"})
+    b = json.load(urlopen(req, timeout=30))["barData"]["priceBars"]
+    return pd.Series([float(x["close"]) for x in b], pd.to_datetime([x["tradeTime"][:8] for x in b], format="%Y%m%d"))
+
+
+def unisci(settimanali, giornalieri):
+    """La barra settimanale è datata alla domenica d'inizio ma è la chiusura del venerdì: la sposto lì.
+    Settimanali solo dove mancano i giornalieri (prima dei loro ultimi 2 anni).
+    CNBC mette anche una barra il sabato (sessione serale USA): la scarto, vale la chiusura del venerdì."""
+    giornalieri = giornalieri[giornalieri.index.dayofweek < 5]
+    s = pd.Series(settimanali.values, settimanali.index + pd.Timedelta(days=5))
+    return pd.concat([s[s.index < giornalieri.index[0]], giornalieri])
+
+
 def scarica(fonte, codice, inizio):
+    if fonte == "cnbc":
+        return unisci(barre("5Y", codice), barre("1Y", codice))
     df = pd.read_csv(URL[fonte].format(codice, inizio))
     if fonte == "fred":  # observation_date, CODICE (vuoto nei festivi)
         return pd.Series(df.iloc[:, 1].values, pd.to_datetime(df.iloc[:, 0])).dropna()
-    return pd.Series(df["OBS_VALUE"].values, pd.to_datetime(df["TIME_PERIOD"]))  # mensili: datate al primo del mese
+    return pd.Series(df["OBS_VALUE"].values, pd.to_datetime(df["TIME_PERIOD"]))
 
 
 def carica():
@@ -63,15 +84,18 @@ def riepilogo():
 
 def main():
     serie, errori = {}, []
-    for fonte in ("fred", "bce"):
+    for fonte in ("fred", "bce", "cnbc"):
         for nome, codice in CONFIG[fonte].items():
             try:
                 serie[nome] = scarica(fonte, codice, CONFIG["inizio"])
             except Exception as e:
                 errori.append(f"{nome} ({codice}): {e}")
-    if errori:  # storico intero riscaricato ogni volta: meglio tenere il vecchio csv che uno con colonne mancanti
+    if errori:  # meglio tenere il vecchio csv che uno con colonne mancanti
         sys.exit("ERRORE, csv non aggiornato:\n" + "\n".join(errori))
     df = pd.concat(serie, axis=1).sort_index()
+    if CSV.exists():  # CNBC dà il giornaliero solo per 2 anni: i giorni più vecchi restano dallo storico
+        vecchio = pd.read_csv(CSV, sep=";", decimal=",", index_col=0, parse_dates=True)
+        df = df.combine_first(vecchio[vecchio.columns.intersection(df.columns)])
     df.to_csv(CSV, sep=";", decimal=",", index_label="Data")
     print(f"{datetime.now():%Y-%m-%d %H:%M} - {len(serie)} serie, {len(df)} date fino al {df.index[-1]:%d/%m/%Y}")
 
@@ -81,6 +105,10 @@ def selfcheck():
     assert variazione(s, pd.DateOffset(months=1)) == 50
     assert variazione(s, pd.DateOffset(months=2)) == 100
     assert pd.isna(variazione(s, pd.DateOffset(years=1)))  # prima dell'inizio: niente variazione
+    sett = pd.Series([1.0, 2.0], pd.to_datetime(["2026-10-04", "2026-10-11"]))  # domeniche
+    gior = pd.Series([3.0, 4.0, 9.0], pd.to_datetime(["2026-10-15", "2026-10-16", "2026-10-17"]))  # 17 = sabato
+    u = unisci(sett, gior)
+    assert list(u.index.strftime("%d/%m")) == ["09/10", "15/10", "16/10"] and list(u) == [1.0, 3.0, 4.0]
 
 
 if __name__ == "__main__":
