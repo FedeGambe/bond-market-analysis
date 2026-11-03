@@ -1,5 +1,5 @@
 # Serie scaricate da main.py: nome della colonna = codice della serie.
-inizio = "2005-01-01"
+inizio = "2000-01-01"
 
 [fred]  # https://fred.stlouisfed.org - rendimenti Treasury giornalieri e spread corporate (ICE BofA, solo ultimi 3 anni)
 "US 3M" = "DGS3MO"
@@ -10,15 +10,20 @@ inizio = "2005-01-01"
 "US IG spread" = "BAMLC0A0CM"
 "US HY spread" = "BAMLH0A0HYM2"
 "EUR HY spread" = "BAMLHE00EHYIOAS"
+"US Baa spread" = "BAA10Y"  # aziende con rating Baa (Moody's) sul Treasury 10 anni: storia lunga, al posto degli ICE
 
-[bce]  # https://data.ecb.europa.eu - curva AAA dell'area euro, giornaliera
+[bce]  # https://data.ecb.europa.eu - curva AAA dell'area euro (giornaliera, dal 2004) e decennali per paese (media mensile)
 "EUR 3M" = "YC/B.U2.EUR.4F.G_N_A.SV_C_YM.SR_3M"
 "EUR 2Y" = "YC/B.U2.EUR.4F.G_N_A.SV_C_YM.SR_2Y"
 "EUR 5Y" = "YC/B.U2.EUR.4F.G_N_A.SV_C_YM.SR_5Y"
 "EUR 10Y" = "YC/B.U2.EUR.4F.G_N_A.SV_C_YM.SR_10Y"
 "EUR 30Y" = "YC/B.U2.EUR.4F.G_N_A.SV_C_YM.SR_30Y"
+"BCE DE 10Y" = "IRS/M.DE.L.L40.CI.0000.EUR.N.Z"
+"BCE IT 10Y" = "IRS/M.IT.L.L40.CI.0000.EUR.N.Z"
+"BCE FR 10Y" = "IRS/M.FR.L.L40.CI.0000.EUR.N.Z"
+"BCE ES 10Y" = "IRS/M.ES.L.L40.CI.0000.EUR.N.Z"
 
-[cnbc]  # API non ufficiale dei grafici CNBC: giornaliera sugli ultimi 2 anni, settimanale fino a 10 anni fa
+[cnbc]  # API non ufficiale dei grafici CNBC: giornaliera sugli ultimi 2 anni, settimanale dal 2011, trimestrale dal 1999
 "DE 1Y" = "DE1Y-DE"
 "DE 2Y" = "DE2Y-DE"
 "DE 5Y" = "DE5Y-DE"

@@ -18,10 +18,12 @@ XLSX = ROOT / "data" / "riepilogo.xlsx"
 CONFIG = tomllib.loads((Path(__file__).parent / "config.toml").read_text(encoding="utf-8"))
 URL = {"fred": "https://fred.stlouisfed.org/graph/fredgraph.csv?id={}&cosd={}",
        "bce": "https://data-api.ecb.europa.eu/service/data/{}?format=csvdata&startPeriod={}",
-       "cnbc": "https://ts-api.cnbc.com/harmony/app/charts/{}.json?symbol={}"}  # 1Y = giornaliero (2 anni), 5Y = settimanale
+       "cnbc": "https://ts-api.cnbc.com/harmony/app/charts/{}.json?symbol={}"}
 # differenze tra serie, in punti percentuali
 DERIVATE = {"US 10Y-2Y": ("US 10Y", "US 2Y"), "EUR 10Y-2Y": ("EUR 10Y", "EUR 2Y"), "US-EUR 10Y": ("US 10Y", "EUR 10Y"),
-            "IT-DE 10Y": ("IT 10Y", "DE 10Y"), "FR-DE 10Y": ("FR 10Y", "DE 10Y"), "ES-DE 10Y": ("ES 10Y", "DE 10Y")}
+            "IT-DE 10Y": ("IT 10Y", "DE 10Y"), "FR-DE 10Y": ("FR 10Y", "DE 10Y"), "ES-DE 10Y": ("ES 10Y", "DE 10Y"),
+            "BCE IT-DE 10Y": ("BCE IT 10Y", "BCE DE 10Y"), "BCE FR-DE 10Y": ("BCE FR 10Y", "BCE DE 10Y"),
+            "BCE ES-DE 10Y": ("BCE ES 10Y", "BCE DE 10Y")}
 
 
 def barre(periodo, simbolo):
@@ -31,18 +33,28 @@ def barre(periodo, simbolo):
     return pd.Series([float(x["close"]) for x in b], pd.to_datetime([x["tradeTime"][:8] for x in b], format="%Y%m%d"))
 
 
-def unisci(settimanali, giornalieri):
-    """La barra settimanale è datata alla domenica d'inizio ma è la chiusura del venerdì: la sposto lì.
-    Settimanali solo dove mancano i giornalieri (prima dei loro ultimi 2 anni).
+def unisci(*strati):
+    """Strati dal più rado al più fitto: ognuno vale solo prima dell'inizio del successivo."""
+    out = strati[-1]
+    for s in reversed(strati[:-1]):
+        out = pd.concat([s[s.index < out.index[0]], out])
+    return out
+
+
+def cnbc(codice):
+    """Trimestrale dal 1999 (ALL), settimanale dal 2011 (10Y), giornaliero sugli ultimi 2 anni (1Y).
+    Le barre sono datate all'inizio del periodo ma sono la chiusura: le sposto alla fine (trimestre, venerdì).
     CNBC mette anche una barra il sabato (sessione serale USA): la scarto, vale la chiusura del venerdì."""
-    giornalieri = giornalieri[giornalieri.index.dayofweek < 5]
-    s = pd.Series(settimanali.values, settimanali.index + pd.Timedelta(days=5))
-    return pd.concat([s[s.index < giornalieri.index[0]], giornalieri])
+    trim, sett, gior = barre("ALL", codice), barre("10Y", codice), barre("1Y", codice)
+    trim.index += pd.offsets.BQuarterEnd(0)
+    sett.index += pd.Timedelta(days=5)
+    return unisci(trim, sett, gior[gior.index.dayofweek < 5])
 
 
 def scarica(fonte, codice, inizio):
     if fonte == "cnbc":
-        return unisci(barre("5Y", codice), barre("1Y", codice))
+        s = cnbc(codice)
+        return s[(s.index >= inizio) & s.between(-5, 25)]  # CNBC ha qualche barra sballata (es. IT 5Y -31,9% il 19/09/2014)
     df = pd.read_csv(URL[fonte].format(codice, inizio))
     if fonte == "fred":  # observation_date, CODICE (vuoto nei festivi)
         return pd.Series(df.iloc[:, 1].values, pd.to_datetime(df.iloc[:, 0])).dropna()
@@ -65,12 +77,14 @@ def riepilogo():
     rows = []
     for c in df:
         s = df[c].dropna()
-        anni10 = s[s.index > s.index[-1] - pd.DateOffset(years=10)]
+        m = s.resample("ME").last().dropna()  # fine mese: stesso peso agli anni con dati trimestrali e a quelli giornalieri
+        m10 = m[m.index > s.index[-1] - pd.DateOffset(years=10)]
         rows.append({"Serie": c, "Dati al": s.index[-1].date(), "Ultimo %": s.iloc[-1],
                      **{f"Var {k} (pb)": variazione(s, pd.DateOffset(**v)) for k, v in
                         (("1m", {"months": 1}), ("3m", {"months": 3}), ("1a", {"years": 1}))},
-                     "Min 10a": anni10.min(), "Max 10a": anni10.max(),
-                     "Percentile 10a": (anni10 <= s.iloc[-1]).mean()})  # 1 = massimo degli ultimi 10 anni
+                     "Dal": s.index[0].year, "Min": s.min(), "Max": s.max(),
+                     # 1 = mai stato così alto, 0 = mai così basso
+                     "Percentile 10a": (m10 <= s.iloc[-1]).mean(), "Percentile storico": (m <= s.iloc[-1]).mean()})
     out = pd.DataFrame(rows).round(3)
     try:
         path = XLSX
@@ -105,10 +119,12 @@ def selfcheck():
     assert variazione(s, pd.DateOffset(months=1)) == 50
     assert variazione(s, pd.DateOffset(months=2)) == 100
     assert pd.isna(variazione(s, pd.DateOffset(years=1)))  # prima dell'inizio: niente variazione
-    sett = pd.Series([1.0, 2.0], pd.to_datetime(["2026-10-04", "2026-10-11"]))  # domeniche
-    gior = pd.Series([3.0, 4.0, 9.0], pd.to_datetime(["2026-10-15", "2026-10-16", "2026-10-17"]))  # 17 = sabato
-    u = unisci(sett, gior)
-    assert list(u.index.strftime("%d/%m")) == ["09/10", "15/10", "16/10"] and list(u) == [1.0, 3.0, 4.0]
+    trim = pd.Series([0.5, 0.7], pd.to_datetime(["2026-07-31", "2026-09-30"]))
+    sett = pd.Series([1.0, 2.0], pd.to_datetime(["2026-10-09", "2026-10-16"]))
+    gior = pd.Series([3.0, 4.0], pd.to_datetime(["2026-10-15", "2026-10-16"]))
+    u = unisci(trim, sett, gior)
+    assert list(u.index.strftime("%d/%m")) == ["31/07", "30/09", "09/10", "15/10", "16/10"] and list(u) == [0.5, 0.7, 1.0, 3.0, 4.0]
+    assert pd.Timestamp("1999-01-01") + pd.offsets.BQuarterEnd(0) == pd.Timestamp("1999-03-31")
 
 
 if __name__ == "__main__":
