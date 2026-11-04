@@ -2,7 +2,8 @@
 Aggiorna lo storico data/rendimenti.csv (una colonna per serie) e il riepilogo data/riepilogo.xlsx.
 
     python src/main.py             scarica e aggiorna csv e foglio
-    python src/main.py --foglio    solo ricostruisce il foglio dal csv"""
+    python src/main.py --foglio    solo ricostruisce foglio e pagina dal csv
+Aggiorna anche i dati della pagina docs/index.html (vedi pagina.py)."""
 import json
 import sys
 import tomllib
@@ -11,6 +12,8 @@ from pathlib import Path
 from urllib.request import Request, urlopen
 
 import pandas as pd
+
+import pagina
 
 ROOT = Path(__file__).resolve().parent.parent
 CSV = ROOT / "data" / "rendimenti.csv"
@@ -21,9 +24,8 @@ URL = {"fred": "https://fred.stlouisfed.org/graph/fredgraph.csv?id={}&cosd={}",
        "cnbc": "https://ts-api.cnbc.com/harmony/app/charts/{}.json?symbol={}"}
 # differenze tra serie, in punti percentuali
 DERIVATE = {"US 10Y-2Y": ("US 10Y", "US 2Y"), "EUR 10Y-2Y": ("EUR 10Y", "EUR 2Y"), "US-EUR 10Y": ("US 10Y", "EUR 10Y"),
-            "IT-DE 10Y": ("IT 10Y", "DE 10Y"), "FR-DE 10Y": ("FR 10Y", "DE 10Y"), "ES-DE 10Y": ("ES 10Y", "DE 10Y"),
-            "BCE IT-DE 10Y": ("BCE IT 10Y", "BCE DE 10Y"), "BCE FR-DE 10Y": ("BCE FR 10Y", "BCE DE 10Y"),
-            "BCE ES-DE 10Y": ("BCE ES 10Y", "BCE DE 10Y")}
+            "IT-DE 10Y": ("IT 10Y", "DE 10Y"), "FR-DE 10Y": ("FR 10Y", "DE 10Y"), "ES-DE 10Y": ("ES 10Y", "DE 10Y")}
+GIUNTA = "2011-11-01"  # prima CNBC è solo trimestrale: i decennali dei paesi vengono dalla media mensile BCE
 
 
 def barre(periodo, simbolo):
@@ -62,8 +64,10 @@ def scarica(fonte, codice, inizio):
 
 
 def carica():
-    """Storico dal csv, con le serie derivate."""
+    """Storico dal csv: decennali dei paesi uniti (BCE mensile prima di GIUNTA, CNBC dopo) e serie derivate."""
     df = pd.read_csv(CSV, sep=";", decimal=",", index_col=0, parse_dates=True)
+    for p in ("DE", "IT", "FR", "ES"):
+        df[f"{p} 10Y"] = df[f"{p} 10Y"].where(df.index >= GIUNTA, df.pop(f"BCE {p} 10Y"))
     return df.assign(**{k: df[a] - df[b] for k, (a, b) in DERIVATE.items()})
 
 
@@ -72,8 +76,7 @@ def variazione(s, off):
     return (s.iloc[-1] - s.asof(s.index[-1] - off)) * 100
 
 
-def riepilogo():
-    df = carica()
+def riepilogo(df):
     rows = []
     for c in df:
         s = df[c].dropna()
@@ -94,6 +97,7 @@ def riepilogo():
         out.to_excel(path, index=False, sheet_name="Riepilogo")
     print(out.to_string(index=False))
     print(f"\nFoglio aggiornato: {path.name}")
+    return out
 
 
 def main():
@@ -131,4 +135,5 @@ if __name__ == "__main__":
     selfcheck()
     if "--foglio" not in sys.argv:
         main()
-    riepilogo()
+    df = carica()
+    pagina.aggiorna(df, riepilogo(df))

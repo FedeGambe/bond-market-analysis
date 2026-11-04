@@ -1,0 +1,13 @@
+{
+    "repo": "bond-market-analysis",
+    "t": "Bond Market Analysis",
+    "d": "Rendimenti, curve e spread dei titoli di Stato europei e americani dal 2000, da BCE, FRED e CNBC.",
+    "tags": [
+        "Finanza",
+        "Bond",
+        "Dati"
+    ],
+    "y": 2026,
+    "live": "/bond-market-analysis/",
+    "img": "img/cover_verticale.svg"
+}
