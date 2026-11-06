@@ -1,0 +1,50 @@
+{
+  "detector": {
+    "ignoreRules": [],
+    "ignoreFiles": [],
+    "ignoreValues": [
+      {
+        "rule": "low-contrast",
+        "value": "*",
+        "files": [
+          "docs/index.html"
+        ],
+        "createdAt": "2026-11-06T10:24:29.586Z",
+        "reason": "Claude: hits are dark-mode tokens (#9a9486, #ff6b4a) measured on white; on real dark bg #120d15 >6:1; light tokens #6b665c/#c0401f pass 4.5:1"
+      },
+      {
+        "rule": "italic-serif-display",
+        "value": "*",
+        "files": [
+          "docs/index.html"
+        ],
+        "createdAt": "2026-11-06T16:04:11.924Z",
+        "reason": "Claude: intro e barra imposte dalla skill crea-pagina-html dell'utente (blocco INTRO e barra da non toccare, uguali su tutte le pagine dei progetti)"
+      },
+      {
+        "rule": "hero-eyebrow-chip",
+        "value": "*",
+        "files": [
+          "docs/index.html"
+        ],
+        "createdAt": "2026-11-06T16:04:12.390Z",
+        "reason": "Claude: intro e barra imposte dalla skill crea-pagina-html dell'utente (blocco INTRO e barra da non toccare, uguali su tutte le pagine dei progetti)"
+      },
+      {
+        "rule": "undersized-ui-text",
+        "value": "*",
+        "files": [
+          "docs/index.html"
+        ],
+        "createdAt": "2026-11-06T16:04:12.849Z",
+        "reason": "Claude: intro e barra imposte dalla skill crea-pagina-html dell'utente (blocco INTRO e barra da non toccare, uguali su tutte le pagine dei progetti)"
+      },
+      {
+        "rule": "overused-font",
+        "value": "inter",
+        "createdAt": "2026-11-06T16:07:35.497Z",
+        "reason": "Claude: Inter imposto dalla skill crea-pagina-html dell'utente (stile del sito FedeGambe.github.io, uguale su tutte le pagine)"
+      }
+    ]
+  }
+}

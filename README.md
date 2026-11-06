@@ -7,13 +7,14 @@ Stessa impostazione di [Target Maturity ETF Planner](https://github.com/FedeGamb
 
 1. **Download** (`src/main.py`): scarica le serie elencate in `src/config.toml` e aggiorna `data/rendimenti.csv` (una colonna per serie). Se una serie fallisce il csv resta quello vecchio.
 2. **Foglio riepilogo** `data/riepilogo.xlsx`: per ogni serie (e per le differenze 10Y-2Y, BTP-Bund, ecc.) ultimo valore, variazioni a 1 mese, 3 mesi e 1 anno in punti base, minimo e massimo dal 2000, percentile sugli ultimi 10 anni e su tutto lo storico (calcolato sui valori di fine mese, così gli anni con dati radi pesano come quelli giornalieri).
-3. **Pagina web** (`docs/index.html`, GitHub Pages): sintesi con i percentili storici, grafici interattivi (decennali, scadenze per paese, curva, 10Y-2Y, spread sulla Germania, spread delle aziende) con un commento generale per ognuno e una riga "oggi" ricalcolata dai dati, tabella di tutte le serie. `src/pagina.py` riscrive solo il blocco dati della pagina (una riga a settimana dal 2000), a ogni lancio di `main.py`.
+3. **Pagina web** (`docs/index.html`, GitHub Pages): andamento dei tassi a breve (2Y), medio (5Y) e lungo (10Y) per USA, euro AAA, Germania, Italia, Francia, Spagna. Filtri globali per periodo e paesi, pulsanti di dettaglio per grafico (giorno, settimana, mese, anno). Legge `docs/dati.js` (un valore per giorno lavorativo dal 2000), riscritto da `src/pagina.py` a ogni lancio di `main.py`. La vecchia pagina è archiviata in `docs/index.html.old`.
 4. **Notebook** (`notebooks/Andamento_Bond.ipynb`): gli stessi grafici per esplorare in Python.
 
 ## Serie (dal 2000)
 
 | | Fonte | Frequenza |
 |---|---|---|
+| Tasso Fed (fed funds effettivo) e tasso sui depositi BCE | FRED, BCE | giornaliera |
 | Treasury USA 3M, 2Y, 5Y, 10Y, 30Y | FRED | giornaliera |
 | Curva AAA area euro 3M, 2Y, 5Y, 10Y, 30Y | BCE | giornaliera, dal 2004 |
 | Decennali Germania, Italia, Francia, Spagna fino a ottobre 2011 (`BCE xx 10Y` nel csv) | BCE | media mensile |
@@ -36,7 +37,9 @@ python src/main.py            # scarica, aggiorna csv, foglio e pagina
 python src/main.py --foglio   # ricostruisce foglio e pagina dal csv
 ```
 
-Poi apri `docs/index.html` nel browser o il notebook in `notebooks/`.
+`pythonw src/job.py` (da Utilità di pianificazione di Windows): lancia `main.py` (3 tentativi), poi committa e pusha csv, foglio e `docs/dati.js`; log in `data/logs/bond.log`, notifica se fallisce.
+
+Poi apri `docs/index.html` (serve un server locale, es. `python -m http.server -d docs`, per leggere il json) o il notebook in `notebooks/`.
 
 ## Avvertenza
 

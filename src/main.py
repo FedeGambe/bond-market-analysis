@@ -129,6 +129,8 @@ def selfcheck():
     u = unisci(trim, sett, gior)
     assert list(u.index.strftime("%d/%m")) == ["31/07", "30/09", "09/10", "15/10", "16/10"] and list(u) == [0.5, 0.7, 1.0, 3.0, 4.0]
     assert pd.Timestamp("1999-01-01") + pd.offsets.BQuarterEnd(0) == pd.Timestamp("1999-03-31")
+    f = pagina.feriali(pd.DataFrame({"a": [1.0, 2.0, 3.0]}, pd.to_datetime(["2026-01-02", "2026-01-03", "2026-01-05"])))
+    assert list(f.index.strftime("%d/%m")) == ["02/01", "05/01"] and list(f.a) == [2.0, 3.0]  # sabato 03 finisce sul venerdì 02
 
 
 if __name__ == "__main__":

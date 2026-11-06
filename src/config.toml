@@ -2,6 +2,7 @@
 inizio = "2000-01-01"
 
 [fred]  # https://fred.stlouisfed.org - rendimenti Treasury giornalieri e spread corporate (ICE BofA, solo ultimi 3 anni)
+"Tasso Fed" = "DFF"  # fed funds effettivo, giornaliero
 "US 3M" = "DGS3MO"
 "US 2Y" = "DGS2"
 "US 5Y" = "DGS5"
@@ -13,6 +14,7 @@ inizio = "2000-01-01"
 "US Baa spread" = "BAA10Y"  # aziende con rating Baa (Moody's) sul Treasury 10 anni: storia lunga, al posto degli ICE
 
 [bce]  # https://data.ecb.europa.eu - curva AAA dell'area euro (giornaliera, dal 2004) e decennali per paese (media mensile)
+"Tasso BCE" = "FM/D.U2.EUR.4F.KR.DFR.LEV"  # tasso sui depositi BCE, giornaliero
 "EUR 3M" = "YC/B.U2.EUR.4F.G_N_A.SV_C_YM.SR_3M"
 "EUR 2Y" = "YC/B.U2.EUR.4F.G_N_A.SV_C_YM.SR_2Y"
 "EUR 5Y" = "YC/B.U2.EUR.4F.G_N_A.SV_C_YM.SR_5Y"
