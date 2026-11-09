@@ -21,6 +21,7 @@ Stessa impostazione di [Target Maturity ETF Planner](https://github.com/FedeGamb
 | Titoli di Stato Germania, Italia, Francia, Spagna a 1 (non Spagna), 2, 5, 10, 30 anni | CNBC | giornaliera dal 2024, settimanale dal 2011, trimestrale prima (Spagna 2Y dal 2014) |
 | Spread aziende Baa sul Treasury 10 anni (Moody's) | FRED | giornaliera |
 | Spread corporate US IG, US HY, EUR HY (ICE BofA OAS) | FRED | giornaliera, solo ultimi 3 anni |
+| CISS, indice di stress sistemico dell'area euro, e la sua parte obbligazionaria | BCE | giornaliera, dal 1980 e dal 1999 |
 
 Per aggiungere una serie basta una riga in `src/config.toml` (codice FRED, chiave BCE o simbolo CNBC).
 

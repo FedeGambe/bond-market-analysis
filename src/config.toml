@@ -15,6 +15,8 @@ inizio = "2000-01-01"
 
 [bce]  # https://data.ecb.europa.eu - curva AAA dell'area euro (giornaliera, dal 2004) e decennali per paese (media mensile)
 "Tasso BCE" = "FM/D.U2.EUR.4F.KR.DFR.LEV"  # tasso sui depositi BCE, giornaliero
+"CISS" = "CISS/D.U2.Z0Z.4F.EC.SS_CIN.IDX"  # stress sistemico area euro (0-1), giornaliero dal 1980
+"CISS bond" = "CISS/D.U2.Z0Z.4F.EC.SS_BMN.CON"  # parte del CISS dal mercato obbligazionario, giornaliera dal 1999
 "EUR 3M" = "YC/B.U2.EUR.4F.G_N_A.SV_C_YM.SR_3M"
 "EUR 2Y" = "YC/B.U2.EUR.4F.G_N_A.SV_C_YM.SR_2Y"
 "EUR 5Y" = "YC/B.U2.EUR.4F.G_N_A.SV_C_YM.SR_5Y"
