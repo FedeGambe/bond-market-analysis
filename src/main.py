@@ -6,6 +6,7 @@ Aggiorna lo storico data/rendimenti.csv (una colonna per serie) e il riepilogo d
 Aggiorna anche i dati della pagina docs/index.html (vedi pagina.py)."""
 import json
 import sys
+import time
 import tomllib
 from datetime import datetime
 from pathlib import Path
@@ -104,10 +105,15 @@ def main():
     serie, errori = {}, []
     for fonte in ("fred", "bce", "cnbc"):
         for nome, codice in CONFIG[fonte].items():
-            try:
-                serie[nome] = scarica(fonte, codice, CONFIG["inizio"])
-            except Exception as e:
-                errori.append(f"{nome} ({codice}): {e}")
+            for tentativo in range(3):  # BCE e CNBC danno ogni tanto 504/timeout passeggeri
+                try:
+                    serie[nome] = scarica(fonte, codice, CONFIG["inizio"])
+                    break
+                except Exception as e:
+                    if tentativo == 2:
+                        errori.append(f"{nome} ({codice}): {e}")
+                    else:
+                        time.sleep(5)
     if errori:  # meglio tenere il vecchio csv che uno con colonne mancanti
         sys.exit("ERRORE, csv non aggiornato:\n" + "\n".join(errori))
     df = pd.concat(serie, axis=1).sort_index()
